@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>{{ date }} daily options report</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        
+        <style>
+            body {background-color: powderblue;}
+            h1   {color: blue;}
+            p    {color: red;}
+        </style>
+	</head>
+	<body>
+        <div class="container">
+            <h2>Daily options report</h2>
+            <p>Session date: {{ date }}</p>
+            <br>
+            <ul class="nav nav-tabs">
+                {% for ticker in tickers_list %}
+                    <li {% if loop.index == 1 %}class="active"{% endif %} role="presentation"><a data-toggle="tab" href="#t{{loop.index}}">{{ ticker }}</a></li>
+                {% endfor %}
+            </ul>
+            
+            <div class="tab-content clearfix">
+                {% for ticker in tickers_list %}
+                    <div class="tab-pane fade{% if loop.index == 1 %} in active{% endif %}" id="t{{loop.index}}">
+                        {% include 'ticker_tab_contents_template.html' %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+	</body>
+</html>

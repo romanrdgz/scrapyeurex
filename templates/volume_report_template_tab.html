@@ -1,0 +1,87 @@
+<h3>Options with highest volume</h3>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Strike</th>
+            <th>Expiration date</th>
+            <th>Right</th>
+            <th>Volume</th>
+            <th>Open interest ev.</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for opt in volume_data[ticker]['hv_option_list'] %}
+        <tr>
+            <td>{{ opt.strike }}</td>
+            <td>{{ opt.expiration_date }}</td>
+            <td>{{ opt.right }}</td>
+            <td>{{ opt.volume }}</td>
+            <td><a href="img/{{ opt.oiev_chart_filename }}"><i class="fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<br>
+<h3>Options with largest positive change in open interest</h3>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Strike</th>
+            <th>Expiration date</th>
+            <th>Right</th>
+            <th>Open interest</th>
+            <th>Open interest diff.</th>
+            <th>Open interest diff. (%)</th>
+            <th>Open interest ev.</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for opt in volume_data[ticker]['poi_option_list'] %}
+        <tr data-toggle="popover" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-content="Hello world!">
+            <td>{{ opt.strike }}</td>
+            <td>{{ opt.expiration_date }}</td>
+            <td>{{ opt.right }}</td>
+            <td>{{ opt.open_interest_latest }}</td>
+            <td>{{ opt.open_interest_diff }}</td>
+            <td>{{ opt.open_interest_diff_pc }}</td>
+            <td><a href="img/{{ opt.oiev_chart_filename }}"><i class="fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<br>
+<h3>Options with largest negative change in open interest</h3>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Strike</th>
+            <th>Expiration date</th>
+            <th>Right</th>
+            <th>Open interest</th>
+            <th>Open interest diff.</th>
+            <th>Open interest diff. (%)</th>
+            <th>Open interest ev.</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for opt in volume_data[ticker]['noi_option_list'] %}
+        <tr>
+            <td>{{ opt.strike }}</td>
+            <td>{{ opt.expiration_date }}</td>
+            <td>{{ opt.right }}</td>
+            <td>{{ opt.open_interest_latest }}</td>
+            <td>{{ opt.open_interest_diff }}</td>
+            <td>{{ opt.open_interest_diff_pc }}</td>
+            <td><a href="img/{{ opt.oiev_chart_filename }}"><i class="fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    $(document).ready(function(){
+        $('[data-toggle="popover"]').popover();   
+    });
+</script>

@@ -4,12 +4,12 @@ from scrapyEurex.items import OptionItem
 from datetime import date, datetime
 
 
-class Estx50spiderSpider(scrapy.Spider):
-    name = "estx50spider"
+class DaxspiderSpider(scrapy.Spider):
+    name = "daxspider"
     allowed_domains = ["eurexchange.com"]
-    underlying_id = 19068
-    url_template = 'http://www.eurexchange.com/exchange-en/products/idx/stx/blc/{underlying_id}!quotesSingleViewOption?callPut={right}&maturityDate={expiration_date}'
-    start_urls = ['http://www.eurexchange.com/exchange-en/products/idx/stx/blc/{}'.format(underlying_id)]
+    underlying_id = 17254
+    url_template = 'http://www.eurexchange.com/exchange-en/products/idx/dax/{underlying_id}!quotesSingleViewOption?callPut={right}&maturityDate={expiration_date}'
+    start_urls = ['http://www.eurexchange.com/exchange-en/products/idx/dax/DAX--Options/{}'.format(underlying_id)]
     
     def parse(self, response):
         # Get list of expiration dates

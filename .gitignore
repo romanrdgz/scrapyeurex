@@ -99,3 +99,6 @@ ENV/
 *.csv
 *.json
 *.txt
+reports/
+data/
+portfolio/
