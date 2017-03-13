@@ -1,4 +1,6 @@
-<h3>Options with highest volume</h3>
+<div class="alert alert-info" role="alert">
+    <h3>Options with highest volume</h3>
+</div>
 <table class="table table-hover">
     <thead>
         <tr>
@@ -11,7 +13,7 @@
     </thead>
     <tbody>
         {% for opt in volume_data[ticker]['hv_option_list'] %}
-        <tr>
+        <tr data-toggle="popover" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price }}<br>Last trade on: {{ opt.open_interest_date }}">
             <td>{{ opt.strike }}</td>
             <td>{{ opt.expiration_date }}</td>
             <td>{{ opt.right }}</td>
@@ -23,7 +25,9 @@
 </table>
 
 <br>
-<h3>Options with largest positive change in open interest</h3>
+<div class="alert alert-info" role="alert">
+    <h3>Options with largest positive change in open interest</h3>
+</div>
 <table class="table table-hover">
     <thead>
         <tr>
@@ -38,7 +42,7 @@
     </thead>
     <tbody>
         {% for opt in volume_data[ticker]['poi_option_list'] %}
-        <tr data-toggle="popover" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-content="Hello world!">
+        <tr data-toggle="popover" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price }}<br>Last trade on: {{ opt.open_interest_date }}">
             <td>{{ opt.strike }}</td>
             <td>{{ opt.expiration_date }}</td>
             <td>{{ opt.right }}</td>
@@ -52,7 +56,9 @@
 </table>
 
 <br>
-<h3>Options with largest negative change in open interest</h3>
+<div class="alert alert-info" role="alert">
+    <h3>Options with largest negative change in open interest</h3>
+</div>
 <table class="table table-hover">
     <thead>
         <tr>
@@ -67,7 +73,7 @@
     </thead>
     <tbody>
         {% for opt in volume_data[ticker]['noi_option_list'] %}
-        <tr>
+        <tr data-toggle="popover" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price }}<br>Last trade on: {{ opt.open_interest_date }}">
             <td>{{ opt.strike }}</td>
             <td>{{ opt.expiration_date }}</td>
             <td>{{ opt.right }}</td>
@@ -79,9 +85,3 @@
         {% endfor %}
     </tbody>
 </table>
-
-<script>
-    $(document).ready(function(){
-        $('[data-toggle="popover"]').popover();   
-    });
-</script>
