@@ -34,12 +34,7 @@ def plot_open_interest(df: pd.DataFrame, t: str, ticker: str, save_img: bool):
         # Get min and max strikes (where there is actually some open interest)
         min_strike = int(df[df.open_interest > 0].strike.min())
         max_strike = int(df[df.open_interest > 0].strike.max())
-        strikes_ticks = df[df.open_interest > 0].strike
-        strikes = np.array(strikes_ticks.tolist())
-        
-        # Get minor distance between 2 strikes
-        min_distance_between_strikes = df.strike.diff().min()
-        width = min_distance_between_strikes / 4
+        strikes = sorted(np.array(df[df.open_interest > 0].strike.unique().tolist()))
         
         # Separate calls from puts
         call = df[df.right == 'C']
@@ -56,24 +51,18 @@ def plot_open_interest(df: pd.DataFrame, t: str, ticker: str, save_img: bool):
             if not oi.empty:
                 put_oi[i] = int(oi.open_interest)
         
-        # Set y range as an additional upper and lower 10% of the spread between max and min spreads.
-        # Consider that there might be only one strike, or very few close strikes. In that case use additional 10% of max strike
-        strike_spread = (max_strike - min_strike) if (max_strike - min_strike > 0.1 * min_strike) else max_strike
-        yrange = [min_strike - strike_spread * 0.1, max_strike + strike_spread * 0.1]
-        
-        # Calculate the vertical size of the plot in order to contain all bars without overlapping nor being too thin.
-        # To do this, consider that barh function has height parameter (default 0.8% of (plot size / num_bars))
-        # Default figure size is (8, 6) inches
+        # Calculate the vertical size of the plot in order to contain all bars without overlapping nor being too thin
         num_bars = max(len(call_oi), len(put_oi))
-        size_vs_nbars = strike_spread / num_bars
-        print(ticker, t, size_vs_nbars)
+        dpi = 300
+        fig_w = 8
+        fig_h = max(4.2, num_bars * 100 / dpi)  # Set a minimum figure height of 4.2 inches (otherwise xlabel and/or plot title is cropped)
         
-        # Plot    
-        fig, ax = plt.subplots(figsize=(8, 16))
-        ax.barh(strikes-width/2, call_oi, height=0.99, color='blue', align='center', label='Calls')
-        ax.barh(strikes+width/2, put_oi, height=0.99, color='red', align='center', label='Puts')
-        
-        ax.set(yticks=strikes_ticks, ylim=yrange)
+        # Plot
+        fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+        df2 = pd.DataFrame({'strike': [s for s in strikes], 'call': call_oi, 'put': put_oi})
+        df2 = df2.set_index('strike')
+        df2[['call', 'put']].plot(kind='barh', color=['blue', 'red'], ax=ax)
+
         ax.set_xlabel('Open interest')
         ax.set_ylabel('Strikes')
         ax.set_title('Open interest for {} expiring on {} \nNote: strikes with open interest < 10% MAX are filtered out'.format(ticker, t))
@@ -87,7 +76,7 @@ def plot_open_interest(df: pd.DataFrame, t: str, ticker: str, save_img: bool):
             if not path.exists(img_folder):
                 os.makedirs(img_folder)
             img_path = path.join(img_folder, svg_filename)
-            plt.savefig(img_path, format='svg', dpi=300)
+            plt.savefig(img_path, format='svg', dpi=dpi)
         else:
             plt.show()  # Show the plot
         plt.close('all')

@@ -13,12 +13,12 @@
     </thead>
     <tbody>
         {% for opt in volume_data[ticker]['hv_option_list'] %}
-        <tr data-toggle="popover" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price }}<br>Last trade on: {{ opt.open_interest_date }}">
+        <tr class="popover-table-row" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price }}<br>Last trade on: {{ opt.open_interest_date }}">
             <td>{{ opt.strike }}</td>
             <td>{{ opt.expiration_date }}</td>
             <td>{{ opt.right }}</td>
             <td>{{ opt.volume }}</td>
-            <td><a href="img/{{ opt.oiev_chart_filename }}"><i class="fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
+            <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
         </tr>
         {% endfor %}
     </tbody>
@@ -42,14 +42,14 @@
     </thead>
     <tbody>
         {% for opt in volume_data[ticker]['poi_option_list'] %}
-        <tr data-toggle="popover" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price }}<br>Last trade on: {{ opt.open_interest_date }}">
+        <tr class="popover-table-row" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price_latest }}<br>Last trade on: {{ opt.open_interest_date_latest }}">
             <td>{{ opt.strike }}</td>
             <td>{{ opt.expiration_date }}</td>
             <td>{{ opt.right }}</td>
             <td>{{ opt.open_interest_latest }}</td>
             <td>{{ opt.open_interest_diff }}</td>
             <td>{{ opt.open_interest_diff_pc }}</td>
-            <td><a href="img/{{ opt.oiev_chart_filename }}"><i class="fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
+            <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
         </tr>
         {% endfor %}
     </tbody>
@@ -73,14 +73,14 @@
     </thead>
     <tbody>
         {% for opt in volume_data[ticker]['noi_option_list'] %}
-        <tr data-toggle="popover" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price }}<br>Last trade on: {{ opt.open_interest_date }}">
+        <tr class="popover-table-row" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price_latest }}<br>Last trade on: {{ opt.open_interest_date_latest }}">
             <td>{{ opt.strike }}</td>
             <td>{{ opt.expiration_date }}</td>
             <td>{{ opt.right }}</td>
             <td>{{ opt.open_interest_latest }}</td>
             <td>{{ opt.open_interest_diff }}</td>
             <td>{{ opt.open_interest_diff_pc }}</td>
-            <td><a href="img/{{ opt.oiev_chart_filename }}"><i class="fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
+            <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
         </tr>
         {% endfor %}
     </tbody>

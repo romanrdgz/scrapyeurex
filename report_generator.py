@@ -45,7 +45,7 @@ def generate_oi_report(movements, output_folder, oi_plots_files):
     template = templateEnv.get_template('report_template_tabbed.html')
 
     session_date = list(movements.values())[0]['highest_volume'].iloc[0].session_date
-    tickers_list = movements.keys()
+    tickers_list = sorted(movements.keys())
     
     volume_data = {}
     oi_data = {}
@@ -122,12 +122,13 @@ if __name__ == '__main__':
         # Generate open interest plots for all the available expiration dates
         oi_plots_files[ticker] = []
         for t in expiration_dates:
-            try:
-                image_filename = oip.plot_open_interest(ldf, t, ticker, True)
-                if image_filename:
-                    oi_plots_files[ticker].append((t, path.join('img', image_filename)))
-            except Exception as e:
-                print('ERROR: Failed to create open interest plot for {} expiring on {}'.format(ticker, t))
-                print(e)
-    
+            if datetime.strptime(session_date, '%d/%m/%Y') <= datetime.strptime(t, '%d/%m/%Y'):
+                try:
+                    image_filename = oip.plot_open_interest(ldf, t, ticker, True)
+                    if image_filename:
+                        oi_plots_files[ticker].append((t, path.join('img', image_filename)))
+                except Exception as e:
+                    print('ERROR: Failed to create open interest plot for {} expiring on {}'.format(ticker, t))
+                    print(e)
+            
     generate_oi_report(movements, output_folder, oi_plots_files)
