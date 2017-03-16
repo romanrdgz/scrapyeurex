@@ -46,7 +46,12 @@ def plot_open_interest(df: pd.DataFrame, t: str, ticker: str, save_img: bool):
         for i, s in enumerate(strikes):
             oi = call[call.strike == s]
             if not oi.empty:
-                call_oi[i] = int(oi.open_interest)
+                try:
+                    call_oi[i] = int(oi.open_interest)
+                except Exception as e:
+                    print(oi)
+                    print(type(oi.open_interest), oi.open_interest)
+                    raise Exception(e)
             oi = put[put.strike == s]
             if not oi.empty:
                 put_oi[i] = int(oi.open_interest)

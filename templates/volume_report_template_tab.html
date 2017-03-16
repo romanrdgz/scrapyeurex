@@ -1,3 +1,4 @@
+{% if volume_data[ticker]['hv_option_list'] %}
 <div class="alert alert-info" role="alert">
     <h3>Options with highest volume</h3>
 </div>
@@ -23,8 +24,10 @@
         {% endfor %}
     </tbody>
 </table>
-
 <br>
+{% endif %}
+
+{% if volume_data[ticker]['poi_option_list'] %}
 <div class="alert alert-info" role="alert">
     <h3>Options with largest positive change in open interest</h3>
 </div>
@@ -54,10 +57,12 @@
         {% endfor %}
     </tbody>
 </table>
-
 <br>
+{% endif %}
+
+{% if volume_data[ticker]['highest_call_oi'] %}
 <div class="alert alert-info" role="alert">
-    <h3>Options with largest negative change in open interest</h3>
+    <h3>Call options with higher open interest for each expiration</h3>
 </div>
 <table class="table table-hover">
     <thead>
@@ -66,22 +71,49 @@
             <th>Expiration date</th>
             <th>Right</th>
             <th>Open interest</th>
-            <th>Open interest diff.</th>
-            <th>Open interest diff. (%)</th>
             <th>Open interest ev.</th>
         </tr>
     </thead>
     <tbody>
-        {% for opt in volume_data[ticker]['noi_option_list'] %}
-        <tr class="popover-table-row" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price_latest }}<br>Last trade on: {{ opt.open_interest_date_latest }}">
+        {% for opt in volume_data[ticker]['highest_call_oi'] %}
+        <tr class="popover-table-row" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price }}<br>Last trade on: {{ opt.open_interest_date }}">
             <td>{{ opt.strike }}</td>
             <td>{{ opt.expiration_date }}</td>
             <td>{{ opt.right }}</td>
-            <td>{{ opt.open_interest_latest }}</td>
-            <td>{{ opt.open_interest_diff }}</td>
-            <td>{{ opt.open_interest_diff_pc }}</td>
+            <td>{{ opt.open_interest }}</td>
             <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+<br>
+{% endif %}
+
+{% if volume_data[ticker]['highest_put_oi'] %}
+<div class="alert alert-info" role="alert">
+    <h3>Put options with higher open interest for each expiration</h3>
+</div>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Strike</th>
+            <th>Expiration date</th>
+            <th>Right</th>
+            <th>Open interest</th>
+            <th>Open interest ev.</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for opt in volume_data[ticker]['highest_put_oi'] %}
+        <tr class="popover-table-row" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price}}<br>Last trade on: {{ opt.open_interest_date }}">
+            <td>{{ opt.strike }}</td>
+            <td>{{ opt.expiration_date }}</td>
+            <td>{{ opt.right }}</td>
+            <td>{{ opt.open_interest }}</td>
+            <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br>
+{% endif %}

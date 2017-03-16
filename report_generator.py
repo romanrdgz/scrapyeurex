@@ -7,25 +7,43 @@ import pandas as pd
 import jinja2
 from datetime import datetime
 import open_interest_plot as oip
+import traceback
 
 
 def get_big_movements(ldf: pd.DataFrame, pdf: pd.DataFrame, n=10):
+    # Filter out too small open interest (less than 0.1% of total open interest)
+    ldf = ldf.drop_duplicates()
+    ldf_total_oi = ldf.open_interest.sum()
+    ldf = ldf.loc[ldf['open_interest'] > 0.001 * ldf_total_oi]
+    pdf = pdf.drop_duplicates()
+    pdf_total_oi = pdf.open_interest.sum()
+    pdf = pdf.loc[pdf['open_interest'] > 0.001 * pdf_total_oi]
+    
     # Get N options with higher volume in the last day of trading available
     ldf_high_volume = ldf[ldf.volume > 0].nlargest(n, 'volume')
     ldf['oiev_chart_filename'] = ldf['expiration_date'].apply(lambda x: datetime.strptime(x, '%d/%m/%Y').strftime('%Y%m%d'))
+    
+    # Get 3 options with higher open interest for each right and expiry available
+    column_names = list(ldf.columns.values)
+    ldf_high_call_oi = pd.DataFrame(columns=column_names)
+    ldf_high_put_oi = pd.DataFrame(columns=column_names)
+    for expiry in ldf.expiration_date.unique().tolist():
+        ldf_high_call_oi = ldf_high_call_oi.append(ldf.loc[(ldf.expiration_date == expiry) & (ldf.right == 'C')].nlargest(3, 'open_interest'))
+        ldf_high_put_oi = ldf_high_put_oi.append(ldf.loc[(ldf.expiration_date == expiry) & (ldf.right == 'P')].nlargest(3, 'open_interest'))
+    ldf_high_call_oi.sort_values(by=['expiration_date', 'open_interest'], ascending=[1, 0])
+    ldf_high_put_oi.sort_values(by=['expiration_date', 'open_interest'], ascending=[1, 0])
         
     # Merge with previous day data and compare to detect important changes in open interest
     mdf = ldf.merge(pdf, on=['strike', 'right', 'expiration_date'], how='inner', suffixes=('_latest', '_previous'))
     mdf['open_interest_diff'] = mdf.apply(lambda x: x['open_interest_latest'] - x['open_interest_previous'], axis=1)
-    mdf['open_interest_diff_pc'] = mdf.apply(lambda x: '{:.2f}%'.format(100 * (x['open_interest_latest'] - x['open_interest_previous']) / x['open_interest_previous']) if x['open_interest_previous'] > 0 else 'N/A', axis=1)
+    mdf['open_interest_diff_pc'] = mdf.apply(lambda x: '{:.2f}%'.format(100 * (x['open_interest_latest'] - x['open_interest_previous']) / x['open_interest_previous']) if x['open_interest_previous'] > 0 else x['open_interest_latest'], axis=1)
     mdf['oiev_chart_filename'] = mdf['expiration_date'].apply(lambda x: datetime.strptime(x, '%d/%m/%Y').strftime('%Y%m%d'))
         
-    # Get options with greater change in open interest (N positive and N negative)
-    mdf_lowest_changers = mdf.nsmallest(n, 'open_interest_diff')
-    mdf_highest_changers = mdf.nlargest(n, 'open_interest_diff')
+    # Get options with greater change in open interest (N positive)
+    mdf_highest_changers = mdf.loc[mdf.open_interest_diff > 0].nlargest(n, 'open_interest_diff')
         
     # Return as dict
-    return {'highest_volume': ldf_high_volume, 'lowest_changers': mdf_lowest_changers, 'highest_changers': mdf_highest_changers}
+    return {'highest_volume': ldf_high_volume, 'highest_call_oi': ldf_high_call_oi, 'highest_put_oi': ldf_high_put_oi, 'highest_changers': mdf_highest_changers}
 
     
 def create_report_folder(session_date: str):
@@ -33,7 +51,7 @@ def create_report_folder(session_date: str):
     output_folder_path = path.join('reports', output_folder)
     if not path.exists(output_folder_path):
         os.makedirs(output_folder_path)
-    return output_folder_path
+    return output_folder
     
         
 def generate_oi_report(movements, output_folder, oi_plots_files):
@@ -52,11 +70,12 @@ def generate_oi_report(movements, output_folder, oi_plots_files):
     portfolio_data = {}
     for ticker in tickers_list:
         volume_data[ticker] = {}
-        volume_data[ticker]['hv_option_list'] =  [opt for _, opt in movements[ticker]['highest_volume'].iterrows()]
+        volume_data[ticker]['hv_option_list']  = [opt for _, opt in movements[ticker]['highest_volume'].iterrows()]
         volume_data[ticker]['poi_option_list'] = [opt for _, opt in movements[ticker]['highest_changers'].iterrows()]
-        volume_data[ticker]['noi_option_list'] = [opt for _, opt in movements[ticker]['lowest_changers'].iterrows()]
+        volume_data[ticker]['highest_call_oi'] = [opt for _, opt in movements[ticker]['highest_call_oi'].iterrows()]
+        volume_data[ticker]['highest_put_oi']  = [opt for _, opt in movements[ticker]['highest_put_oi'].iterrows()]
         
-        oi_data[ticker] = oi_plots_files[ticker]
+        oi_data[ticker] = sorted(oi_plots_files[ticker])
         
         portfolio_data[ticker] = {}
         
@@ -70,10 +89,17 @@ def generate_oi_report(movements, output_folder, oi_plots_files):
     
     output_file = 'report_{}.html'.format(session_date.replace('/', ''))
     output_html = template.render(context)
-    with open(path.join(output_folder, output_file), 'w') as f:
+    with open(path.join('reports', output_folder, output_file), 'w') as f:
         f.write(output_html)
 
-        
+    return path.join(output_folder, output_file)
+    
+    
+def generate_link_to_latest(report_path):
+    with open(path.join('reports', 'latest.html'), 'w') as f:
+        f.write('<html><head><meta http-equiv="refresh" content="0; url={}"/></head><body></body></html>'.format(report_path))
+    
+    
 if __name__ == '__main__':
     # Get all available tickers
     data_folder = 'data'
@@ -103,18 +129,23 @@ if __name__ == '__main__':
         for file in daily_files:  # Append dataframe into a single dataframe with the info from all files
             df = pd.read_json(file)
             all_historical_data = all_historical_data.append(df)
-        for df in movements[ticker].values():
+        for key, df in movements[ticker].items(): #values()
             for index, row in df.iterrows():
                 try:
                     filename = oip.plot_open_interest_evolution(all_historical_data, row.strike, row.expiration_date, ticker, True)
                     df.set_value(index, 'oiev_chart_filename', filename)
                 except Exception as e:
+                    print(key, ticker, type(row), row)
                     print('ERROR: Failed to create open interest evolution plot for {} {} expiring on {}'.format(ticker, row.strike, row.expiration_date))
                     print(e)
         
         # Create report folder (if it does not exist)
-        session_date = list(movements.values())[0]['highest_volume'].iloc[0].session_date
-        output_folder = create_report_folder(session_date)
+        if not output_folder:
+            try:
+                session_date = list(movements.values())[0]['highest_volume'].iloc[0].session_date
+                output_folder = create_report_folder(session_date)
+            except Exception as e:
+                output_folder = 'aux'
         
         # Get all available expiration dates from previous session
         expiration_dates = pdf.expiration_date.unique()
@@ -128,7 +159,9 @@ if __name__ == '__main__':
                     if image_filename:
                         oi_plots_files[ticker].append((t, path.join('img', image_filename)))
                 except Exception as e:
+                    traceback.print_exc()
                     print('ERROR: Failed to create open interest plot for {} expiring on {}'.format(ticker, t))
                     print(e)
             
-    generate_oi_report(movements, output_folder, oi_plots_files)
+    report_path = generate_oi_report(movements, output_folder, oi_plots_files)
+    generate_link_to_latest(report_path)
