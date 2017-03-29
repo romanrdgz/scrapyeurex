@@ -1,10 +1,15 @@
 {% if volume_data[ticker]['hv_option_list'] %}
+<div class="alert alert-success" role="alert">
+    <h4>{{ ticker }} currently trading at {{ volume_data[ticker]['last_price'] }}</h4>
+</div>
+<br>
 <div class="alert alert-info" role="alert">
     <h3>Options with highest volume</h3>
 </div>
 <table class="table table-hover">
     <thead>
         <tr>
+            <th>S/K diff.</th>
             <th>Strike</th>
             <th>Expiration date</th>
             <th>Right</th>
@@ -15,6 +20,7 @@
     <tbody>
         {% for opt in volume_data[ticker]['hv_option_list'] %}
         <tr class="popover-table-row" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price }}<br>Last trade on: {{ opt.open_interest_date }}">
+            <td>{{ opt.diff_from_underlying_price }}</td>
             <td>{{ opt.strike }}</td>
             <td>{{ opt.expiration_date }}</td>
             <td>{{ opt.right }}</td>
@@ -34,6 +40,7 @@
 <table class="table table-hover">
     <thead>
         <tr>
+            <th>S/K diff.</th>
             <th>Strike</th>
             <th>Expiration date</th>
             <th>Right</th>
@@ -46,6 +53,7 @@
     <tbody>
         {% for opt in volume_data[ticker]['poi_option_list'] %}
         <tr class="popover-table-row" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price_latest }}<br>Last trade on: {{ opt.open_interest_date_latest }}">
+            <td>{{ opt.diff_from_underlying_price_latest }}</td>
             <td>{{ opt.strike }}</td>
             <td>{{ opt.expiration_date }}</td>
             <td>{{ opt.right }}</td>
@@ -67,6 +75,7 @@
 <table class="table table-hover">
     <thead>
         <tr>
+            <th>S/K diff.</th>
             <th>Strike</th>
             <th>Expiration date</th>
             <th>Right</th>
@@ -77,6 +86,7 @@
     <tbody>
         {% for opt in volume_data[ticker]['highest_call_oi'] %}
         <tr class="popover-table-row" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price }}<br>Last trade on: {{ opt.open_interest_date }}">
+            <td>{{ opt.diff_from_underlying_price }}</td>
             <td>{{ opt.strike }}</td>
             <td>{{ opt.expiration_date }}</td>
             <td>{{ opt.right }}</td>
@@ -96,6 +106,7 @@
 <table class="table table-hover">
     <thead>
         <tr>
+            <th>S/K diff.</th>
             <th>Strike</th>
             <th>Expiration date</th>
             <th>Right</th>
@@ -106,6 +117,7 @@
     <tbody>
         {% for opt in volume_data[ticker]['highest_put_oi'] %}
         <tr class="popover-table-row" tabindex="0" data-toggle="popover" data-trigger="focus" data-placement="left" title="{{ opt.strike }} {{ opt.right }} {{ opt.expiration_date }}" data-html="true" data-content="Last price: {{ opt.last_price}}<br>Last trade on: {{ opt.open_interest_date }}">
+            <td>{{ opt.diff_from_underlying_price }}</td>
             <td>{{ opt.strike }}</td>
             <td>{{ opt.expiration_date }}</td>
             <td>{{ opt.right }}</td>

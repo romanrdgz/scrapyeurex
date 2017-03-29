@@ -27,11 +27,11 @@ def get_big_movements(ldf: pd.DataFrame, pdf: pd.DataFrame, n=10):
     column_names = list(ldf.columns.values)
     ldf_high_call_oi = pd.DataFrame(columns=column_names)
     ldf_high_put_oi = pd.DataFrame(columns=column_names)
-    for expiry in ldf.expiration_date.unique().tolist():
+    for expiry in sorted(ldf.expiration_date.unique().tolist()):
         ldf_high_call_oi = ldf_high_call_oi.append(ldf.loc[(ldf.expiration_date == expiry) & (ldf.right == 'C')].nlargest(3, 'open_interest'))
         ldf_high_put_oi = ldf_high_put_oi.append(ldf.loc[(ldf.expiration_date == expiry) & (ldf.right == 'P')].nlargest(3, 'open_interest'))
-    ldf_high_call_oi.sort_values(by=['expiration_date', 'open_interest'], ascending=[1, 0])
-    ldf_high_put_oi.sort_values(by=['expiration_date', 'open_interest'], ascending=[1, 0])
+    ldf_high_call_oi.sort_values(by=['expiration_date', 'open_interest'], ascending=[0, 0])
+    ldf_high_put_oi.sort_values(by=['expiration_date', 'open_interest'], ascending=[0, 0])
         
     # Merge with previous day data and compare to detect important changes in open interest
     mdf = ldf.merge(pdf, on=['strike', 'right', 'expiration_date'], how='inner', suffixes=('_latest', '_previous'))
@@ -54,7 +54,7 @@ def create_report_folder(session_date: str):
     return output_folder
     
         
-def generate_oi_report(movements, output_folder, oi_plots_files):
+def generate_oi_report(movements, output_folder, oi_plots_files, current_prices):
     templateLoader = jinja2.FileSystemLoader('templates')
     templateEnv = jinja2.Environment(
 	    autoescape=False,
@@ -70,6 +70,7 @@ def generate_oi_report(movements, output_folder, oi_plots_files):
     portfolio_data = {}
     for ticker in tickers_list:
         volume_data[ticker] = {}
+        volume_data[ticker]['last_price'] = float(current_prices.loc[current_prices.ticker == ticker, 'last_price'])
         volume_data[ticker]['hv_option_list']  = [opt for _, opt in movements[ticker]['highest_volume'].iterrows()]
         volume_data[ticker]['poi_option_list'] = [opt for _, opt in movements[ticker]['highest_changers'].iterrows()]
         volume_data[ticker]['highest_call_oi'] = [opt for _, opt in movements[ticker]['highest_call_oi'].iterrows()]
@@ -98,6 +99,11 @@ def generate_oi_report(movements, output_folder, oi_plots_files):
 def generate_link_to_latest(report_path):
     with open(path.join('reports', 'latest.html'), 'w') as f:
         f.write('<html><head><meta http-equiv="refresh" content="0; url={}"/></head><body></body></html>'.format(report_path))
+        
+        
+def get_percentual_diff(K: float, S: float):
+    diff = (float(K) - S) / S * 100
+    return '{:.2f}%'.format(diff)
     
     
 if __name__ == '__main__':
@@ -105,11 +111,17 @@ if __name__ == '__main__':
     data_folder = 'data'
     output_folder = None
     available_tickers = [f for f in os.listdir(data_folder) if path.isdir(path.join(data_folder, f))]
+    
+    # Get current underlying prices for all the contracts under analysis
+    current_prices = pd.read_csv('current.csv', sep=';', names=['ticker', 'last_price'], dtype={'ticker': str, 'last_price': float})
 
     # Iterate tickers to find important changes in open interest and volume
     movements = {}
     oi_plots_files = {}
     for ticker in available_tickers:
+        # Get current underlying price
+        S = float(current_prices.loc[current_prices.ticker == ticker, 'last_price'])
+        
         # Get 2 last daily files to be compared
         ticker_data_folder = path.join(data_folder, ticker)
         daily_files = sorted([f for f in os.listdir(ticker_data_folder) if path.isfile(path.join(ticker_data_folder, f)) and f.lower().endswith('.json')])
@@ -119,6 +131,10 @@ if __name__ == '__main__':
         # Load latest session data and previous day data
         ldf = pd.read_json(latest_daily_filepath)
         pdf = pd.read_json(previous_day_filepath)
+        
+        # Add a column to both DataFrames with the % diff between each strike and current underlying price
+        ldf['diff_from_underlying_price'] = ldf['strike'].apply(get_percentual_diff, args=(S,))
+        pdf['diff_from_underlying_price'] = pdf['strike'].apply(get_percentual_diff, args=(S,))
         
         # Look for big movements for each ticker
         movements[ticker] = get_big_movements(ldf, pdf)
@@ -163,5 +179,5 @@ if __name__ == '__main__':
                     print('ERROR: Failed to create open interest plot for {} expiring on {}'.format(ticker, t))
                     print(e)
             
-    report_path = generate_oi_report(movements, output_folder, oi_plots_files)
+    report_path = generate_oi_report(movements, output_folder, oi_plots_files, current_prices)
     generate_link_to_latest(report_path)
