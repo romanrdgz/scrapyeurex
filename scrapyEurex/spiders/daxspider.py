@@ -17,10 +17,11 @@ class DaxspiderSpider(scrapy.Spider):
         
         # Iterate each the page of each expiration date (for both call and put)
         for exp_date in expiry_dates:
-            for r in ['Call', 'Put']:
-                yield scrapy.Request(url=self.url_template.format(underlying_id=self.underlying_id, right=r, expiration_date=exp_date),
-                                     callback=self.parse_opt_chain,
-                                     meta={'right': r[0], 'expiration_date': exp_date})
+            if exp_date:  # Avoids empty value from "All expiries" option
+                for r in ['Call', 'Put']:
+                    yield scrapy.Request(url=self.url_template.format(underlying_id=self.underlying_id, right=r, expiration_date=exp_date),
+                                         callback=self.parse_opt_chain,
+                                         meta={'right': r[0], 'expiration_date': exp_date})
 
     def parse_opt_chain(self, response):
         table_rows = response.xpath('(//table[@class="dataTable"])[1]/tbody/tr')
@@ -41,7 +42,11 @@ class DaxspiderSpider(scrapy.Spider):
             item['percentage_diff_to_prev_day'] = float(row.xpath('./td[10]/span/text()').extract()[0].replace('%', '').rstrip())
             item['volume'] = int(row.xpath('./td[15]/span/text()').extract()[0].replace(',', ''))
             item['open_interest'] = int(row.xpath('./td[16]/span/text()').extract()[0].replace(',', ''))
-            item['open_interest_date'] = datetime.strptime(row.xpath('./td[17]/span/text()').extract()[0], '%m/%d/%Y').strftime('%d/%m/%Y')
+            # Open interest date can be 'n.a.' if no contract has been traded
+            try:
+                item['open_interest_date'] = datetime.strptime(row.xpath('./td[17]/span/text()').extract()[0], '%m/%d/%Y').strftime('%d/%m/%Y')
+            except:
+                item['open_interest_date'] = 'n.a.'
             
             last_price = row.xpath('./td[11]/span/text()').extract()[0].replace(',', '')
             try:

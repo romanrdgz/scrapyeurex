@@ -21,6 +21,11 @@ NEWSPIDER_MODULE = 'scrapyEurex.spiders'
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
 
+# Retry request if fails with known error codes a maximum of N times
+RETRY_ENABLED = True
+RETRY_HTTP_CODES = [500, 503, 504, 400, 404, 408]
+RETRY_TIMES = 5
+
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
 

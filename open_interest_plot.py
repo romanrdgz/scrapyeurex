@@ -12,18 +12,31 @@ sns.set(style="white", color_codes=True)
 pd.options.mode.chained_assignment = None
 
 
-def plot_open_interest(df: pd.DataFrame, t: str, ticker: str, save_img: bool):
+def plot_open_interest(df: pd.DataFrame, t: str, ticker: str, output_folder: str, rewrite_img: bool, save_img: bool):
     '''
     Plots open interest for all the available strikes for a given expiration date
     df: Pandas DataFrame with options information
     t: Expiration date of the option under study
-    ticker: Ticker of the underlying
-    save_img: True to store plot as an image file, false to shor it in a window
+    ticker: Ticker of the underlying asset
+    output_folder: Ouput folder
+    rewrite_img: Rewrites image if exists, skips computation otherwise
+    save_img: True to store plot as an image file, false to show it in a window
     '''
-    svg_filename = None
+    img_path = ''
+    svg_filename = ''
+    if save_img:
+        svg_filename = '{}_oi_{}.svg'.format(ticker, datetime.strptime(t, '%d/%m/%Y').strftime('%Y%m%d'))
+        img_folder = path.join('reports', output_folder, 'img')
+        img_path = path.join(img_folder, svg_filename)
+        # Check if image already exists, and skip computation (unless rewrite option is activated)
+        if not rewrite_img and img_path and path.isfile(img_path):
+            return svg_filename
+    
     # Filter out for given expiration date and keep only contracts where open interest is not NaN
     df = df[pd.notnull(df['open_interest'])]
     df = df[df.expiration_date == t]
+    if df.empty:
+        return None
     
     # Filter out strikes too OTM
     max_oi = int(df.open_interest.max())
@@ -69,13 +82,6 @@ def plot_open_interest(df: pd.DataFrame, t: str, ticker: str, save_img: bool):
         ax.legend()
 
         if save_img:
-            svg_filename = '{}_oi_{}.svg'.format(ticker, datetime.strptime(t, '%d/%m/%Y').strftime('%Y%m%d'))
-            reports_subfolders = sorted([f for f in os.listdir('reports') if path.isdir(path.join('reports', f))])
-            latest_folder = reports_subfolders[-1]
-            img_folder = path.join('reports', latest_folder, 'img')
-            if not path.exists(img_folder):
-                os.makedirs(img_folder)
-            img_path = path.join(img_folder, svg_filename)
             plt.savefig(img_path, format='svg', dpi=dpi)
         else:
             plt.show()  # Show the plot
@@ -83,15 +89,32 @@ def plot_open_interest(df: pd.DataFrame, t: str, ticker: str, save_img: bool):
     return svg_filename
     
     
-def plot_open_interest_evolution(df: pd.DataFrame, k: float, t: str, ticker: str, save_img: bool):
+def plot_open_interest_evolution(df: pd.DataFrame, k: float, t: str, ticker: str, output_folder: str, rewrite_img: bool, save_img: bool):
     '''
     Plots the evolution of open interest for both calls and puts of a given strike and expiry date
     df: Pandas DataFrame with MEFF information
     k: Strike of the option under study
     t: Expiration date of the option under study
+    ticker: Ticker of the underlying asset
+    output_folder: Ouput folder
+    rewrite_img: Rewrites image if exists, skips computation otherwise
+    save_img: True to store plot as an image file, false to show it in a window
     '''
+    img_path = ''
+    svg_filename = ''
+    if save_img:
+        svg_filename = '{}_oiev_{}_{}.svg'.format(ticker, k, datetime.strptime(t, '%Y/%m/%d').strftime('%Y%m%d'))
+        img_folder = path.join('reports', output_folder, 'img')
+        img_path = path.join(img_folder, svg_filename)
+        # Check if image already exists, and skip computation (unless rewrite option is activated)
+        if not rewrite_img and img_path and path.isfile(img_path):
+            return svg_filename
+    
+    # Traspose date format
+    tt = datetime.strptime(t, '%Y/%m/%d').strftime('%d/%m/%Y')
+    
     # Filter out data
-    df = df[(df.expiration_date == t) & (df.strike == k)]
+    df = df[(df.expiration_date == tt) & (df.strike == k)]
     
     # Get data to plot (get session dates for each group independently to avoid problems when data is missing for one group)
     session_dates_call = pd.to_datetime(df.session_date[df.right == 'C'], format="%d/%m/%Y")
@@ -108,15 +131,7 @@ def plot_open_interest_evolution(df: pd.DataFrame, k: float, t: str, ticker: str
     ax.grid(True)
     ax.legend()
     
-    svg_filename = None
     if save_img:
-        svg_filename = '{}_oiev_{}_{}.svg'.format(ticker, k, datetime.strptime(t, '%d/%m/%Y').strftime('%Y%m%d'))
-        reports_subfolders = sorted([f for f in os.listdir('reports') if path.isdir(path.join('reports', f))])
-        latest_folder = reports_subfolders[-1]
-        img_folder = path.join('reports', latest_folder, 'img')
-        if not path.exists(img_folder):
-            os.makedirs(img_folder)
-        img_path = path.join(img_folder, svg_filename)
         plt.savefig(img_path, format='svg', dpi=300)
     else:
         plt.show()
