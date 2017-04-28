@@ -64,7 +64,7 @@ def create_report_folder(session_date: str):
     return output_folder
     
         
-def generate_oi_report(movements, output_folder, oi_plots_files, strike_skew_plot_files, exp_skew_plot_files, current_prices):
+def generate_oi_report(movements, output_folder, oi_plots_files, strike_skew_plot_files, exp_skew_plot_files, tickers_under_analysis):
     templateLoader = jinja2.FileSystemLoader('templates')
     templateEnv = jinja2.Environment(
 	    autoescape=False,
@@ -78,9 +78,10 @@ def generate_oi_report(movements, output_folder, oi_plots_files, strike_skew_plo
     volume_data    = {}
     oi_data        = {}
     portfolio_data = {}
+    other_data     = {}
     for ticker in tickers_list:
         volume_data[ticker] = {}
-        volume_data[ticker]['last_price'] = '{:.2f}'.format(float(current_prices.loc[current_prices.ticker == ticker, 'last_price']))
+        volume_data[ticker]['last_price'] = float(tickers_under_analysis.loc[tickers_under_analysis.ticker == ticker, 'last_price'])
         volume_data[ticker]['hv_option_list']     = [opt for _, opt in movements[ticker]['highest_volume'].iterrows()]
         volume_data[ticker]['poi_option_list']    = [opt for _, opt in movements[ticker]['highest_changers'].iterrows()]
         volume_data[ticker]['poi_pc_option_list'] = [opt for _, opt in movements[ticker]['highest_pc_changers'].iterrows()]
@@ -91,6 +92,11 @@ def generate_oi_report(movements, output_folder, oi_plots_files, strike_skew_plo
         
         portfolio_data[ticker] = {}
         
+        other_data[ticker] = {}
+        other_data[ticker]['yahoo_ticker'] = tickers_under_analysis.loc[tickers_under_analysis.ticker == ticker, 'yahoo_ticker'].values[0]
+        other_data[ticker]['tradingview_ticker'] = tickers_under_analysis.loc[tickers_under_analysis.ticker == ticker, 'tradingview_ticker'].values[0]
+        other_data[ticker]['description'] = tickers_under_analysis.loc[tickers_under_analysis.ticker == ticker, 'description'].values[0]
+        
     context = {
         'date': session_date,
         'tickers_list': tickers_list,
@@ -98,7 +104,8 @@ def generate_oi_report(movements, output_folder, oi_plots_files, strike_skew_plo
         'oi_data': oi_data,
         'strike_skew': strike_skew_plot_files,
         'exp_skew': exp_skew_plot_files,
-        'portfolio_data': portfolio_data
+        'portfolio_data': portfolio_data,
+        'other_data': other_data
     }
     
     
@@ -135,8 +142,8 @@ if __name__ == '__main__':
     available_tickers = [f for f in os.listdir(data_folder) if path.isdir(path.join(data_folder, f))]
     
     # Get current underlying prices for all the contracts under analysis
-    current_prices = pd.read_csv('current.csv', sep=';', names=['ticker', 'last_price'], dtype={'ticker': str, 'last_price': float})
-
+    tickers_under_analysis = pd.read_csv('current.csv', sep=';', names=['ticker', 'yahoo_ticker', 'tradingview_ticker', 'description', 'last_price'], dtype={'ticker': str, 'yahoo_ticker': str, 'tradingview_ticker': str, 'description': str, 'last_price': float})
+    
     # Iterate tickers to find important changes in open interest and volume
     movements              = {}
     oi_plots_files         = {}
@@ -144,7 +151,7 @@ if __name__ == '__main__':
     exp_skew_plot_files    = {}
     for ticker in available_tickers:
         # Get current underlying price
-        S = float(current_prices.loc[current_prices.ticker == ticker, 'last_price'])
+        S = float(tickers_under_analysis.loc[tickers_under_analysis.ticker == ticker, 'last_price'])
         
         # Get 2 last daily files to be compared
         ticker_data_folder = path.join(data_folder, ticker)
@@ -214,5 +221,5 @@ if __name__ == '__main__':
         strikes_to_cover = [k for k in sorted(np.array(ldf.strike.unique().tolist())) if abs(k-S) <= (0.2 * S)]
         exp_skew_plot_files[ticker] = skew_plot.plot_expiration_skew(ldf, strikes_to_cover, ticker, output_folder, config.force_rewrite, True)
             
-    report_path = generate_oi_report(movements, output_folder, oi_plots_files, strike_skew_plot_files, exp_skew_plot_files, current_prices)
+    report_path = generate_oi_report(movements, output_folder, oi_plots_files, strike_skew_plot_files, exp_skew_plot_files, tickers_under_analysis)
     generate_link_to_latest(report_path)

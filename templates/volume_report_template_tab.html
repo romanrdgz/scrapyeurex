@@ -1,182 +1,227 @@
+<div class="alert alert-info">
+    <h4><strong>{{ ticker }}</strong> currently trading at <strong>{{ volume_data[ticker]['last_price'] }}</strong></h4>
+    <img src="https://chart.finance.yahoo.com/z?s={{ other_data[ticker]['yahoo_ticker'] }}&t=3m&q=c">
+</div>
+<br>
+<div id="accordion" class="panel-group">
+
 {% if volume_data[ticker]['hv_option_list'] %}
-<div class="alert alert-success" role="alert">
-    <h4>{{ ticker }} currently trading at {{ volume_data[ticker]['last_price'] }}</h4>
-</div>
-<br>
-<div class="alert alert-info" role="alert">
-    <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#volume-section-{{ ticker }}-1">Options with highest volume</button>
-    <div id="volume-section-{{ ticker }}-1" class="collapse">
-        <table data-toggle="table" data-sort-name="volume_field" data-sort-order="desc">
-            <thead>
-                <tr>
-                    <th data-field="skdiff_field" data-sortable="true">To ATM</th>
-                    <th data-field="strike_field" data-sortable="true">Strike</th>
-                    <th data-field="expdate_field" data-sortable="true">Expiration date</th>
-                    <th data-field="right_field" data-sortable="true">Right</th>
-                    <th data-field="price_field" data-sortable="true">Last price</th>
-                    <th data-field="volume_field" data-sortable="true">Volume</th>
-                    <th data-field="oiev_field" data-sortable="false">Chart</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for opt in volume_data[ticker]['hv_option_list'] %}
-                <tr>
-                    <td>{{ opt.diff_from_underlying_price }}</td>
-                    <td>{{ opt.strike }}</td>
-                    <td>{{ opt.expiration_date }}</td>
-                    <td>{{ opt.right }}</td>
-                    <td>{{ opt.last_price }}</td>
-                    <td>{{ opt.volume }}</td>
-                    <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#volume-section-content-{{ ticker }}-1">
+                    Options with highest volume
+                    <span class="pull-right"><i class="fa fa-chevron-down" aria-hidden="true"></i></span>
+                </a>
+            </h4>
+        </div>
+        <div id="volume-section-content-{{ ticker }}-1" class="panel-collapse collapse in" data-parent="#accordion" data-toggle="false">
+            <div class="panel-body">
+                <table data-toggle="table" data-sort-name="volume_field" data-sort-order="desc">
+                    <thead>
+                        <tr>
+                            <th data-field="skdiff_field" data-sortable="true">To ATM</th>
+                            <th data-field="strike_field" data-sortable="true">Strike</th>
+                            <th data-field="expdate_field" data-sortable="true">Expiration date</th>
+                            <th data-field="right_field" data-sortable="true">Right</th>
+                            <th data-field="price_field" data-sortable="true">Last price</th>
+                            <th data-field="volume_field" data-sortable="true">Volume</th>
+                            <th data-field="oiev_field" data-sortable="false">Chart</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for opt in volume_data[ticker]['hv_option_list'] %}
+                        <tr>
+                            <td>{{ opt.diff_from_underlying_price }}</td>
+                            <td>{{ opt.strike }}</td>
+                            <td>{{ opt.expiration_date }}</td>
+                            <td>{{ opt.right }}</td>
+                            <td>{{ '%.2f' % opt.last_price }}</td>
+                            <td>{{ opt.volume }}</td>
+                            <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-</div>
-<br>
 {% endif %}
 
 {% if volume_data[ticker]['poi_option_list'] %}
-<div class="alert alert-info" role="alert">
-    <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#volume-section-{{ ticker }}-2">Options with largest positive change in open interest</button>
-    <div id="volume-section-{{ ticker }}-2" class="collapse">
-        <table data-toggle="table" data-sort-name="oievpc_field" data-sort-order="desc">
-            <thead>
-                <tr>
-                    <th data-field="skdiff_field" data-sortable="true">To ATM</th>
-                    <th data-field="strike_field" data-sortable="true">Strike</th>
-                    <th data-field="expdate_field" data-sortable="true">Expiration date</th>
-                    <th data-field="right_field" data-sortable="true">Right</th>
-                    <th data-field="price_field" data-sortable="true">Last price</th>
-                    <th data-field="oi_field" data-sortable="true">Open interest</th>
-                    <th data-field="oievpc_field" data-sortable="true">Open interest diff. (%)</th>
-                    <th data-field="oiev_field" data-sortable="false">Chart</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for opt in volume_data[ticker]['poi_option_list'] %}
-                <tr>
-                    <td>{{ opt.diff_from_underlying_price_latest }}</td>
-                    <td>{{ opt.strike }}</td>
-                    <td>{{ opt.expiration_date }}</td>
-                    <td>{{ opt.right }}</td>
-                    <td>{{ opt.last_price_latest }}</td>
-                    <td>{{ opt.open_interest_latest }}</td>
-                    <td>{{ opt.open_interest_diff_pc_str }}</td>
-                    <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#volume-section-content-{{ ticker }}-2">
+                    Options with largest positive change in open interest
+                    <span class="pull-right"><i class="fa fa-chevron-down" aria-hidden="true"></i></span>
+
+                </a>
+            </h4>
+        </div>
+        <div id="volume-section-content-{{ ticker }}-2" class="panel-collapse collapse" data-parent="#accordion" data-toggle="false">
+            <div class="panel-body">
+                <table data-toggle="table" data-sort-name="oievpc_field" data-sort-order="desc">
+                    <thead>
+                        <tr>
+                            <th data-field="skdiff_field" data-sortable="true">To ATM</th>
+                            <th data-field="strike_field" data-sortable="true">Strike</th>
+                            <th data-field="expdate_field" data-sortable="true">Expiration date</th>
+                            <th data-field="right_field" data-sortable="true">Right</th>
+                            <th data-field="price_field" data-sortable="true">Last price</th>
+                            <th data-field="oi_field" data-sortable="true">Open interest</th>
+                            <th data-field="oievpc_field" data-sortable="true">Open interest diff. (%)</th>
+                            <th data-field="oiev_field" data-sortable="false">Chart</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for opt in volume_data[ticker]['poi_option_list'] %}
+                        <tr>
+                            <td>{{ opt.diff_from_underlying_price_latest }}</td>
+                            <td>{{ opt.strike }}</td>
+                            <td>{{ opt.expiration_date }}</td>
+                            <td>{{ opt.right }}</td>
+                            <td>{{ '%.2f' % opt.last_price_latest }}</td>
+                            <td>{{ opt.open_interest_latest }}</td>
+                            <td>{{ opt.open_interest_diff_pc_str }}</td>
+                            <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-</div>
-<br>
 {% endif %}
 
 {% if volume_data[ticker]['poi_option_list'] %}
-<div class="alert alert-info" role="alert">
-    <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#volume-section-{{ ticker }}-3">Options with largest % positive change in open interest</button>
-    <div id="volume-section-{{ ticker }}-3" class="collapse">
-        <table data-toggle="table" data-sort-name="oievpc_field" data-sort-order="desc">
-            <thead>
-                <tr>
-                    <th data-field="skdiff_field" data-sortable="true">To ATM</th>
-                    <th data-field="strike_field" data-sortable="true">Strike</th>
-                    <th data-field="expdate_field" data-sortable="true">Expiration date</th>
-                    <th data-field="right_field" data-sortable="true">Right</th>
-                    <th data-field="price_field" data-sortable="true">Last price</th>
-                    <th data-field="oi_field" data-sortable="true">Open interest</th>
-                    <th data-field="oievpc_field" data-sortable="true">Open interest diff. (%)</th>
-                    <th data-field="oiev_field" data-sortable="false">Chart</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for opt in volume_data[ticker]['poi_pc_option_list'] %}
-                <tr>
-                    <td>{{ opt.diff_from_underlying_price_latest }}</td>
-                    <td>{{ opt.strike }}</td>
-                    <td>{{ opt.expiration_date }}</td>
-                    <td>{{ opt.right }}</td>
-                    <td>{{ opt.last_price_latest }}</td>
-                    <td>{{ opt.open_interest_latest }}</td>
-                    <td>{{ opt.open_interest_diff_pc_str }}</td>
-                    <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#volume-section-content-{{ ticker }}-3">
+                    Options with largest % positive change in open interest
+                    <span class="pull-right"><i class="fa fa-chevron-down" aria-hidden="true"></i></span>
+                </a>
+            </h4>
+        </div>
+        <div id="volume-section-content-{{ ticker }}-3" class="panel-collapse collapse" data-parent="#accordion" data-toggle="false">
+            <div class="panel-body">
+                <table data-toggle="table" data-sort-name="oievpc_field" data-sort-order="desc">
+                    <thead>
+                        <tr>
+                            <th data-field="skdiff_field" data-sortable="true">To ATM</th>
+                            <th data-field="strike_field" data-sortable="true">Strike</th>
+                            <th data-field="expdate_field" data-sortable="true">Expiration date</th>
+                            <th data-field="right_field" data-sortable="true">Right</th>
+                            <th data-field="price_field" data-sortable="true">Last price</th>
+                            <th data-field="oi_field" data-sortable="true">Open interest</th>
+                            <th data-field="oievpc_field" data-sortable="true">Open interest diff. (%)</th>
+                            <th data-field="oiev_field" data-sortable="false">Chart</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for opt in volume_data[ticker]['poi_pc_option_list'] %}
+                        <tr>
+                            <td>{{ opt.diff_from_underlying_price_latest }}</td>
+                            <td>{{ opt.strike }}</td>
+                            <td>{{ opt.expiration_date }}</td>
+                            <td>{{ opt.right }}</td>
+                            <td>{{ '%.2f' % opt.last_price_latest }}</td>
+                            <td>{{ opt.open_interest_latest }}</td>
+                            <td>{{ opt.open_interest_diff_pc_str }}</td>
+                            <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-</div>
-<br>
 {% endif %}
 
 {% if volume_data[ticker]['highest_call_oi'] %}
-<div class="alert alert-info" role="alert">
-    <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#volume-section-{{ ticker }}-4">Call options with higher open interest for each expiration</button>
-    <div id="volume-section-{{ ticker }}-4" class="collapse">
-        <table data-toggle="table" data-sort-name="oi_field" data-sort-order="desc">
-            <thead>
-                <tr>
-                    <th data-field="skdiff_field" data-sortable="true">To ATM</th>
-                    <th data-field="strike_field" data-sortable="true">Strike</th>
-                    <th data-field="expdate_field" data-sortable="true">Expiration date</th>
-                    <th data-field="right_field" data-sortable="true">Right</th>
-                    <th data-field="price_field" data-sortable="true">Last price</th>
-                    <th data-field="oi_field" data-sortable="true">Open interest</th>
-                    <th data-field="oiev_field" data-sortable="false">Chart</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for opt in volume_data[ticker]['highest_call_oi'] %}
-                <tr>
-                    <td>{{ opt.diff_from_underlying_price }}</td>
-                    <td>{{ opt.strike }}</td>
-                    <td>{{ opt.expiration_date }}</td>
-                    <td>{{ opt.right }}</td>
-                    <td>{{ opt.last_price }}</td>
-                    <td>{{ opt.open_interest }}</td>
-                    <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#volume-section-content-{{ ticker }}-4">
+                    Call options with higher open interest for each expiration
+                    <span class="pull-right"><i class="fa fa-chevron-down" aria-hidden="true"></i></span>
+                </a>
+            </h4>
+        </div>
+        <div id="volume-section-content-{{ ticker }}-4" class="panel-collapse collapse" data-parent="#accordion" data-toggle="false">
+            <div class="panel-body">
+                <table data-toggle="table" data-sort-name="oi_field" data-sort-order="desc">
+                    <thead>
+                        <tr>
+                            <th data-field="skdiff_field" data-sortable="true">To ATM</th>
+                            <th data-field="strike_field" data-sortable="true">Strike</th>
+                            <th data-field="expdate_field" data-sortable="true">Expiration date</th>
+                            <th data-field="right_field" data-sortable="true">Right</th>
+                            <th data-field="price_field" data-sortable="true">Last price</th>
+                            <th data-field="oi_field" data-sortable="true">Open interest</th>
+                            <th data-field="oiev_field" data-sortable="false">Chart</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for opt in volume_data[ticker]['highest_call_oi'] %}
+                        <tr>
+                            <td>{{ opt.diff_from_underlying_price }}</td>
+                            <td>{{ opt.strike }}</td>
+                            <td>{{ opt.expiration_date }}</td>
+                            <td>{{ opt.right }}</td>
+                            <td>{{ '%.2f' % opt.last_price }}</td>
+                            <td>{{ opt.open_interest }}</td>
+                            <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-</div>
-<br>
 {% endif %}
 
 {% if volume_data[ticker]['highest_put_oi'] %}
-<div class="alert alert-info" role="alert">
-    <button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#volume-section-{{ ticker }}-5">Put options with higher open interest for each expiration</button>
-    <div id="volume-section-{{ ticker }}-5" class="collapse">
-        <table data-toggle="table" data-sort-name="oi_field" data-sort-order="desc">
-            <thead>
-                <tr>
-                    <th data-field="skdiff_field" data-sortable="true">To ATM</th>
-                    <th data-field="strike_field" data-sortable="true">Strike</th>
-                    <th data-field="expdate_field" data-sortable="true">Expiration date</th>
-                    <th data-field="right_field" data-sortable="true">Right</th>
-                    <th data-field="price_field" data-sortable="true">Last price</th>
-                    <th data-field="oi_field" data-sortable="true">Open interest</th>
-                    <th data-field="oiev_field" data-sortable="false">Chart</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for opt in volume_data[ticker]['highest_put_oi'] %}
-                <tr>
-                    <td>{{ opt.diff_from_underlying_price }}</td>
-                    <td>{{ opt.strike }}</td>
-                    <td>{{ opt.expiration_date }}</td>
-                    <td>{{ opt.right }}</td>
-                    <td>{{ opt.last_price }}</td>
-                    <td>{{ opt.open_interest }}</td>
-                    <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#volume-section-content-{{ ticker }}-5">
+                    Put options with higher open interest for each expiration
+                    <span class="pull-right"><i class="fa fa-chevron-down" aria-hidden="true"></i></span>
+                </a>
+            </h4>
+        </div>
+        <div id="volume-section-content-{{ ticker }}-5" class="panel-collapse collapse">
+            <div class="panel-body">
+                <table data-toggle="table" data-sort-name="oi_field" data-sort-order="desc">
+                    <thead>
+                        <tr>
+                            <th data-field="skdiff_field" data-sortable="true">To ATM</th>
+                            <th data-field="strike_field" data-sortable="true">Strike</th>
+                            <th data-field="expdate_field" data-sortable="true">Expiration date</th>
+                            <th data-field="right_field" data-sortable="true">Right</th>
+                            <th data-field="price_field" data-sortable="true">Last price</th>
+                            <th data-field="oi_field" data-sortable="true">Open interest</th>
+                            <th data-field="oiev_field" data-sortable="false">Chart</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for opt in volume_data[ticker]['highest_put_oi'] %}
+                        <tr>
+                            <td>{{ opt.diff_from_underlying_price }}</td>
+                            <td>{{ opt.strike }}</td>
+                            <td>{{ opt.expiration_date }}</td>
+                            <td>{{ opt.right }}</td>
+                            <td>{{ '%.2f' % opt.last_price }}</td>
+                            <td>{{ opt.open_interest }}</td>
+                            <td><a href="#" source="img/{{ opt.oiev_chart_filename }}" title="Evolution of {{ ticker }}'s options expiring on {{ opt.expiry }}"><i class="modal-link fa fa-area-chart fa-2" aria-hidden="true"></i></a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-</div>
-<br>
 {% endif %}
+</div>
