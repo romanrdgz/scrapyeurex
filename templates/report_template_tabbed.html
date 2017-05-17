@@ -12,10 +12,15 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.css">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/locale/bootstrap-table-zh-CN.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
        
         <style>
             body {background-color: #f0f0f0;}
             .popover-title {background: #d9edf7;}
+            #typeahead-template .empty-message {
+              padding: 5px 10px;
+              text-align: center;
+            }
         </style>
 	</head>
 	<body>
@@ -28,6 +33,9 @@
             <h2><span class="label label-primary">Daily options report</span></h2>
             <p>Session date: {{ date }}</p>
             <br>
+            <div id="typeahead-template">
+                <input class="typeahead" type="text" placeholder="Entry ticker">
+            </div>
             <ul class="nav nav-tabs">
                 {% for ticker in tickers_list %}
                     <li {% if loop.index == 1 %}class="active"{% endif %} role="presentation"><a data-toggle="tab" href="#t{{loop.index}}">{{ ticker }}</a></li>
@@ -83,5 +91,31 @@
                 $('#myModal').modal({show:true});
             });
         });
+        
+        var tickers = new Bloodhound({
+          datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+          queryTokenizer: Bloodhound.tokenizers.whitespace,
+          prefetch: 'current.json',
+          remote: {
+            url: 'current.json',
+            wildcard: '%QUERY'
+          }
+        });
+        
+        {% raw %}
+        $('#typeahead-template .typeahead').typeahead(null, {
+          name: 'tickers',
+          display: 'value',
+          source: tickers,
+          templates: {
+            empty: [
+              '<div class="empty-message">',
+                'Unable to find any supported ticker that match the current query',
+              '</div>'
+            ].join('\n'),
+            suggestion: Handlebars.compile('<div><strong>{{ticker}}</strong> - {{description}}</div>')
+          }
+        });
+        {% endraw %}
     </script>
 </html>

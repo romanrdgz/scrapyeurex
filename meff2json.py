@@ -20,7 +20,7 @@ contracts_stats_dtype = {'contract_code': str, 'high_price': float, 'low_price':
 
 contract_subgroups = {'20': 'FIE', '23': 'BBVA', '28': 'SAN', '31': 'TEF', '43': 'ITX'}
 
-def meff_to_json(input_file_path):
+def meff_to_json(input_file_path, ticker=None):
     # Check if given input file exists
     if path.exists(input_file_path) and path.isfile(input_file_path):
         # Delete tmp folder (if exists)
@@ -64,9 +64,9 @@ def meff_to_json(input_file_path):
         del df['contract_code']
         del df['contract_type']
         
-        # Get options data for the subgroups under study
-        for key, value in contract_subgroups.items():
-            subgroup_df = df[(df.contract_subgroup == key)]
+        # Check if only a specific ticker is wanted, or all the default ones are
+        if ticker and ticker in contract_subgroups.values():
+            subgroup_df = df[(df.contract_subgroup == ticker)]
             
             # Delete unused columns
             del subgroup_df['contract_subgroup']
@@ -74,7 +74,19 @@ def meff_to_json(input_file_path):
             # Save as json
             _, file = path.split(input_file_path)
             json_filename = file.replace('.zip', '.json')
-            subgroup_df.to_json(path.join('data', value, json_filename), orient='records')
+            subgroup_df.to_json(path.join('data', ticker, json_filename), orient='records')
+        else:
+            # Get options data for all of the subgroups under study
+            for key, value in contract_subgroups.items():
+                subgroup_df = df[(df.contract_subgroup == key)]
+                
+                # Delete unused columns
+                del subgroup_df['contract_subgroup']
+            
+                # Save as json
+                _, file = path.split(input_file_path)
+                json_filename = file.replace('.zip', '.json')
+                subgroup_df.to_json(path.join('data', value, json_filename), orient='records')
         
         # Delete tmp folder
         shutil.rmtree('tmp')
@@ -85,12 +97,14 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-i', '--input_file', type=str, required=True,
                         help='Determines the single daily zip file or folder to convert')
+    parser.add_argument('-t', '--ticker', type=str, default=None,
+                        help='Determines a specific ticker to be extracted')            
     args = parser.parse_args()
     
     if path.exists(args.input_file):
         if path.isfile(args.input_file):
-            meff_to_json(args.input_file)
+            meff_to_json(args.input_file, args.ticker)
         elif path.isdir(args.input_file):
             # Convert all available daily files data
-            [meff_to_json(path.join(args.input_file, f)) for f in listdir(args.input_file) if path.isfile(path.join(args.input_file, f)) and f.lower().endswith('.zip')]
+            [meff_to_json(path.join(args.input_file, f), args.ticker) for f in listdir(args.input_file) if path.isfile(path.join(args.input_file, f)) and f.lower().endswith('.zip')]
     

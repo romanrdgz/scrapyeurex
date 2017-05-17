@@ -139,7 +139,7 @@ if __name__ == '__main__':
     # Get all available tickers
     data_folder = 'data'
     output_folder = None
-    available_tickers = [f for f in os.listdir(data_folder) if path.isdir(path.join(data_folder, f))]
+    available_tickers = [f for f in os.listdir(data_folder) if path.isdir(path.join(data_folder, f)) and os.listdir(path.join(data_folder, f))]
     
     # Get current underlying prices for all the contracts under analysis
     tickers_under_analysis = pd.read_csv('current.csv', sep=';', names=['ticker', 'yahoo_ticker', 'tradingview_ticker', 'description', 'last_price'], dtype={'ticker': str, 'yahoo_ticker': str, 'tradingview_ticker': str, 'description': str, 'last_price': float})
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     for ticker in available_tickers:
         # Get current underlying price
         S = float(tickers_under_analysis.loc[tickers_under_analysis.ticker == ticker, 'last_price'])
-        
+
         # Get 2 last daily files to be compared
         ticker_data_folder = path.join(data_folder, ticker)
         daily_files = sorted([f for f in os.listdir(ticker_data_folder) if path.isfile(path.join(ticker_data_folder, f)) and f.lower().endswith('.json')])
@@ -162,6 +162,10 @@ if __name__ == '__main__':
         # Load latest session data and previous day data
         ldf = pd.read_json(latest_daily_filepath)
         pdf = pd.read_json(previous_day_filepath)
+        
+        # Continue with the next ticker if DataFrame is empty:
+        if ldf.empty:
+            continue
         
         # Add a column to both DataFrames with the % diff between each strike and current underlying price
         ldf['diff_from_underlying_price'] = ldf['strike'].apply(get_percentual_diff, args=(S,))
@@ -220,6 +224,6 @@ if __name__ == '__main__':
         strike_skew_plot_files[ticker] = skew_plot.plot_strikes_skew(ldf, expiration_dates[:4], ticker, output_folder, config.force_rewrite, True)
         strikes_to_cover = [k for k in sorted(np.array(ldf.strike.unique().tolist())) if abs(k-S) <= (0.2 * S)]
         exp_skew_plot_files[ticker] = skew_plot.plot_expiration_skew(ldf, strikes_to_cover, ticker, output_folder, config.force_rewrite, True)
-            
+
     report_path = generate_oi_report(movements, output_folder, oi_plots_files, strike_skew_plot_files, exp_skew_plot_files, tickers_under_analysis)
     generate_link_to_latest(report_path)

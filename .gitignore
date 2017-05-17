@@ -99,6 +99,8 @@ ENV/
 *.csv
 *.json
 *.txt
+*.dat
 reports/
 data/
 portfolio/
+cboe_data/
