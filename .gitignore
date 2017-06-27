@@ -103,4 +103,5 @@ ENV/
 reports/
 data/
 portfolio/
-cboe_data/
+raw_cboe_data/
+raw_meff_data/
