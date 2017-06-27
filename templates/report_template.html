@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>SmartCondor daily options report - {{ date }}</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/locale/bootstrap-table-zh-CN.min.js"></script>
+        <script src="http://d3js.org/d3.v4.min.js"></script>
+        <script src="http://techanjs.org/techan.min.js"></script>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+       
+        <style>
+            body {background-color: #f0f0f0;}
+            .popover-title {background: #d9edf7;}
+            #typeahead-template .empty-message {
+              padding: 5px 10px;
+              text-align: center;
+            }
+        </style>
+	</head>
+	<body>
+        <div class="container">
+            <center>
+                <a href="http://www.smartcondor.com" align="center" class="text-center">
+                    <img src="http://i.imgur.com/bw54c0B.png" class="swu-logo" alt="Logo Image">
+                </a>
+            </center>
+            
+            <h2><span class="label label-primary">Daily options report</span></h2>
+            <p>Session date: {{ date }}</p>
+            <br>
+            
+            <div id="typeahead-wrapper">
+                <input type="text" id="typeahead-input" data-provide="typeahead" autocomplete="off" placeholder="Entry ticker">
+            </div>
+            <br>
+            
+            <div id="contents">
+                    <div class="hidable-div collapse" id="home-div">
+                        <h4>Select a ticker in the box above</h4>
+                    </div>
+                {% for ticker in tickers_list %}
+                    <div class="hidable-div collapse" id="{{ ticker }}-div">
+                        {% include 'ticker_tab_contents_template.html' %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Image viewer -->
+        <div tabindex="-1" class="modal fade" id="myModal" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button class="close" type="button" data-dismiss="modal">x</button>
+                        <h3 class="modal-title">Heading</h3>
+                    </div>
+                    <div class="modal-body"></div>
+                    <div class="modal-footer">
+                        <button class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+	</body>
+    <footer>
+        <center>
+            Copyright 2017 SmartCondor
+        </center>
+    </footer>
+    <script type="text/javascript">
+        // Image opened in a modal
+        $(document).ready(function() {
+            $('.thumbnail').click(function(){
+                $('.modal-body').empty();
+                var title = $(this).parent('a').attr('title');
+                $('.modal-title').html(title);
+                $($(this).parents('div').html()).appendTo('.modal-body');
+                $('#myModal').modal({show:true});
+            });
+            
+            $('.modal-link').click(function(){
+                $('.modal-body').empty();
+                var title = $(this).parent('a').attr('title');
+                $('.modal-title').html(title);
+                var img_source = $(this).parents('a').attr('source');
+                $('<img class=\'img-responsive\' src=\'' + img_source + '\'>').appendTo('.modal-body');
+                $('#myModal').modal({show:true});
+            });
+        });
+        
+        var $input = $('#typeahead-input');
+        $input.typeahead({
+            // Options
+            highlight: true,
+            hint: true,
+            afterSelect: function(item) {
+                var div_to_show = "#" + item.toUpperCase() + "-div";
+                // Hide all hidable divs
+                $(".hidable-div").hide();
+                // Show selected ticker div
+                $(div_to_show).show();
+            },
+            // Data source
+            source: ["BBVA","DAX","DIA","ESTX50","FIE","ITX","QQQ","SAN","SPY","TEF","VIX"]
+        });
+    </script>
+</html>

@@ -90,7 +90,63 @@ def meff_to_json(input_file_path, ticker=None):
         
         # Delete tmp folder
         shutil.rmtree('tmp')
-    
+
+
+def check_option(input_file_path, ticker, strike, expiration_date, right):
+    '''
+    Method to check if null values seen in the report already have null value in the raw data, or introduced later
+    '''
+    # Check if given input file exists
+    if path.exists(input_file_path) and path.isfile(input_file_path):
+        # Delete tmp folder (if exists)
+        if path.exists('tmp') and path.isdir('tmp'):
+            shutil.rmtree('tmp')
+        
+        # First unzip (inside there is another zip file which also has to be unziped)
+        outer_zip = zipfile.ZipFile(input_file_path, 'r')
+        outer_zip.extractall('tmp')
+        outer_zip.close()
+        inner_zip = zipfile.ZipFile(path.join('tmp', inner_zip_filename), 'r')
+        inner_zip.extractall('tmp')
+        inner_zip.close()
+        
+        # Load contracts file
+        contracts_data = pd.read_csv(path.join('tmp', contracts_file), sep=';', decimal=',',
+                                     header=None, names=contracts_columns, dtype=contracts_dtype, parse_dates=[0, 5],
+                                     usecols=[0, 2, 3, 4, 5, 6])
+        
+        # Now load contracts stats file
+        contracts_stats_data = pd.read_csv(path.join('tmp', contracts_stats_file), sep=';', decimal=',',
+                                           header=None, names=contracts_stats_columns, dtype=contracts_stats_dtype, parse_dates=[0],
+                                           usecols=[2, 3, 4, 5, 6, 13, 15])
+        
+        # Join dataframes on contract_code
+        df = pd.merge(contracts_data, contracts_stats_data, how='inner', on='contract_code', sort=False)
+        
+        # Adapt session date and expiration date to the same format used in EUREX website
+        df['session_date'] = pd.to_datetime(df['session_date']).dt.strftime('%d/%m/%Y')
+        df['expiration_date'] = pd.to_datetime(df['expiration_date']).dt.strftime('%d/%m/%Y')
+        
+        # Filter the dataframe to keep only options (rows which contain a defined strike)
+        df.strike.replace('', np.nan, inplace=True)
+        df.dropna(subset=['strike'], inplace=True)
+        # The first char of contract code is the right initial for option contracts
+        # Also, only European type options are listed for miniIBEX, but we have to filter out European type from stock options
+        df['contract_code'] = df['contract_code'].apply(lambda x: np.nan if 'EU ' in x else x)
+        df.dropna(subset=['contract_code'], inplace=True)
+        df['right'] = df['contract_code'].apply(lambda x: x[0])
+        # Delete unused columns
+        del df['contract_code']
+        del df['contract_type']
+        
+        # Print desired option data
+        df.loc[(df['ticker'] == ticker) & (df['right'] == right) & (df['strike'] == strike) & (df['expiration_date'] == expiration_date)] #TODO
+        print('CUCU')
+        
+        # Delete tmp folder
+        shutil.rmtree('tmp')
+        
+        
 
 if __name__ == '__main__':
     # Configure the command line options

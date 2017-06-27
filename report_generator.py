@@ -11,30 +11,28 @@ import open_interest_plot as oip
 import skew_plot
 from argparse import ArgumentParser
 import traceback
+from shutil import copy2
 
 
 def get_big_movements(ldf: pd.DataFrame, pdf: pd.DataFrame, n=10):
     # Filter out too small open interest (less than 0.1% of total open interest)
     ldf = ldf.drop_duplicates()
-    ldf_total_oi = ldf.open_interest.sum()
-    ldf = ldf.loc[ldf['open_interest'] > 0.001 * ldf_total_oi]
     ldf['expiration_date'] = ldf['expiration_date'].apply(lambda x: datetime.strptime(x, '%d/%m/%Y').strftime('%Y/%m/%d'))
     pdf = pdf.drop_duplicates()
-    pdf_total_oi = pdf.open_interest.sum()
-    pdf = pdf.loc[pdf['open_interest'] > 0.001 * pdf_total_oi]
     pdf['expiration_date'] = pdf['expiration_date'].apply(lambda x: datetime.strptime(x, '%d/%m/%Y').strftime('%Y/%m/%d'))
     
     # Get N options with higher volume in the last day of trading available
-    ldf_high_volume = ldf[ldf.volume > 0].nlargest(n, 'volume')
+    ldf_high_volume = ldf[ldf.volume > 0].nlargest(n, 'volume').drop_duplicates(keep='first')
     ldf['oiev_chart_filename'] = ldf['expiration_date'].apply(lambda x: datetime.strptime(x, '%Y/%m/%d').strftime('%Y%m%d'))
     
     # Get 3 options with higher open interest for each right and expiry available
     column_names = list(ldf.columns.values)
     ldf_high_call_oi = pd.DataFrame(columns=column_names)
     ldf_high_put_oi = pd.DataFrame(columns=column_names)
+
     for expiry in sorted(ldf.expiration_date.unique().tolist()):
-        ldf_high_call_oi = ldf_high_call_oi.append(ldf.loc[(ldf.expiration_date == expiry) & (ldf.right == 'C')].nlargest(3, 'open_interest'))
-        ldf_high_put_oi = ldf_high_put_oi.append(ldf.loc[(ldf.expiration_date == expiry) & (ldf.right == 'P')].nlargest(3, 'open_interest'))
+        ldf_high_call_oi = ldf_high_call_oi.append(ldf.loc[(ldf.expiration_date == expiry) & (ldf.right == 'C')].nlargest(3, 'open_interest').drop_duplicates(keep='first'))
+        ldf_high_put_oi = ldf_high_put_oi.append(ldf.loc[(ldf.expiration_date == expiry) & (ldf.right == 'P')].nlargest(3, 'open_interest').drop_duplicates(keep='first'))
     ldf_high_call_oi.sort_values(by=['expiration_date', 'open_interest'], ascending=[0, 0])
     ldf_high_put_oi.sort_values(by=['expiration_date', 'open_interest'], ascending=[0, 0])
         
@@ -46,9 +44,9 @@ def get_big_movements(ldf: pd.DataFrame, pdf: pd.DataFrame, n=10):
     mdf['oiev_chart_filename'] = mdf['expiration_date'].apply(lambda x: datetime.strptime(x, '%Y/%m/%d').strftime('%Y%m%d'))
         
     # Get options with greater change in open interest (N positive)
-    mdf_highest_changers = mdf.loc[mdf.open_interest_diff > 0].nlargest(n, 'open_interest_diff')
+    mdf_highest_changers = mdf.loc[mdf.open_interest_diff > 0].nlargest(n, 'open_interest_diff').drop_duplicates(keep='first')
     # And with greater porcentual change in open interest (N positive)
-    mdf_highest_pc_changers = mdf.loc[mdf.open_interest_diff > 0].nlargest(n, 'open_interest_diff_pc')
+    mdf_highest_pc_changers = mdf.loc[mdf.open_interest_diff > 0].nlargest(n, 'open_interest_diff_pc').drop_duplicates(keep='first')
         
     # Return as dict
     return {'highest_volume': ldf_high_volume, 'highest_call_oi': ldf_high_call_oi, 'highest_put_oi': ldf_high_put_oi, 'highest_changers': mdf_highest_changers, 'highest_pc_changers': mdf_highest_pc_changers,}
@@ -63,16 +61,27 @@ def create_report_folder(session_date: str):
         os.makedirs(path.join(output_folder_path, 'img'))
     return output_folder
     
-        
+
+def _get_latest_session_date(ticker, df):
+    value = None
+    try:
+        value = df['highest_volume'].iloc[0].session_date
+    except IndexError as e:
+        print('ERROR trying to get latest session date from ticker {}'.format(ticker))
+        value = '01/01/1990'
+    return value
+    
+    
 def generate_oi_report(movements, output_folder, oi_plots_files, strike_skew_plot_files, exp_skew_plot_files, tickers_under_analysis):
     templateLoader = jinja2.FileSystemLoader('templates')
     templateEnv = jinja2.Environment(
 	    autoescape=False,
 		loader=templateLoader,
 		trim_blocks=False)
-    template = templateEnv.get_template('report_template_tabbed.html')
+    template = templateEnv.get_template('report_template.html')
 
-    session_date = list(movements.values())[0]['highest_volume'].iloc[0].session_date
+    session_date = max([_get_latest_session_date(ticker, sdate) for ticker, sdate in  list(movements.items())])  #TODO error here for iloc[0] for some value
+    
     tickers_list = sorted(movements.keys())
     
     volume_data    = {}
@@ -108,7 +117,6 @@ def generate_oi_report(movements, output_folder, oi_plots_files, strike_skew_plo
         'other_data': other_data
     }
     
-    
     output_file = 'report_{}.html'.format(datetime.strptime(session_date, '%d/%m/%Y').strftime('%Y%m%d'))
     output_html = template.render(context)
     with open(path.join('reports', output_folder, output_file), 'w') as f:
@@ -117,7 +125,7 @@ def generate_oi_report(movements, output_folder, oi_plots_files, strike_skew_plo
     return path.join(output_folder, output_file)
     
     
-def generate_link_to_latest(report_path):
+def generate_link_to_latest(report_path: str):
     with open(path.join('reports', 'latest.html'), 'w') as f:
         f.write('<html><head><meta http-equiv="refresh" content="0; url={}"/></head><body></body></html>'.format(report_path))
         
@@ -125,8 +133,14 @@ def generate_link_to_latest(report_path):
 def get_percentual_diff(K: float, S: float):
     diff = (float(K) - S) / S * 100
     return '{:.2f}%'.format(diff)
-    
-    
+
+
+def copy_candlestick_datafiles(report_path: str):
+    for ticker, candlestick_datafile in [(t, os.path.join('data', t, 'daily_option_volume.csv')) for t in os.listdir('data') if os.path.isdir(os.path.join('data', t)) and os.listdir(os.path.join('data', t))]:
+        if os.path.exists(candlestick_datafile):
+            copy2(candlestick_datafile, os.path.join('reports', report_path, '{}_candlestick_data.csv'.format(ticker)))
+
+            
 if __name__ == '__main__':
     # Configure the command line options
     parser = ArgumentParser()
@@ -160,9 +174,17 @@ if __name__ == '__main__':
         previous_day_filepath = path.join(ticker_data_folder, daily_files[-2])
         
         # Load latest session data and previous day data
-        ldf = pd.read_json(latest_daily_filepath)
-        pdf = pd.read_json(previous_day_filepath)
-        
+        try:
+            ldf = pd.read_json(latest_daily_filepath)
+        except Exception as e:
+            print('ERROR trying to read json file {}: {}'.format(latest_daily_filepath, e))
+            continue
+        try:
+            pdf = pd.read_json(previous_day_filepath)
+        except Exception as e:
+            print('ERROR trying to read json file {}: {}'.format(previous_day_filepath, e))
+            continue
+            
         # Continue with the next ticker if DataFrame is empty:
         if ldf.empty:
             continue
@@ -172,8 +194,8 @@ if __name__ == '__main__':
         pdf['diff_from_underlying_price'] = pdf['strike'].apply(get_percentual_diff, args=(S,))
         
         # Calculate implied volatility for latest data available (and also for previous day)
-        ldf['iv'] = skew_plot.calculate_iv(ldf, S, r=config.risk_free_rate)
-        #pdf['iv'] = skew_plot.calculate_iv(pdf, S, r=config.risk_free_rate)
+        ldf['iv'] = skew_plot.calculate_iv(ldf, S, r=config.risk_free_rate, ticker=ticker)
+        #pdf['iv'] = skew_plot.calculate_iv(pdf, S, r=config.risk_free_rate, ticker=ticker)
        
         # Look for big movements for each ticker
         movements[ticker] = get_big_movements(ldf, pdf)
@@ -181,7 +203,7 @@ if __name__ == '__main__':
         # Create report folder (if it does not exist)
         if not output_folder:
             try:
-                session_date = list(movements.values())[0]['highest_volume'].iloc[0].session_date
+                session_date = max([sdate['highest_volume'].iloc[0].session_date for sdate in  list(movements.values())])
                 output_folder = create_report_folder(session_date)
             except Exception as e:
                 output_folder = 'aux'
@@ -192,8 +214,11 @@ if __name__ == '__main__':
         daily_files = [path.join(ticker_data_folder, f) for f in os.listdir(ticker_data_folder) if path.isfile(path.join(ticker_data_folder, f)) and f.lower().endswith('.json')]
         all_historical_data = pd.DataFrame()
         for file in daily_files:  # Append dataframe into a single dataframe with the info from all files
-            df = pd.read_json(file)
-            all_historical_data = all_historical_data.append(df)
+            try:
+                df = pd.read_json(file)
+                all_historical_data = all_historical_data.append(df)
+            except Exception as e:
+                print('ERROR while reading file {}: {}'.format(file, e))
         for key, df in movements[ticker].items():
             for index, row in df.iterrows():
                 try:
@@ -221,9 +246,16 @@ if __name__ == '__main__':
                     print(e)
                     
         # Generate volatility skew plots for next expiries and strikes covering 20% of current underlying asset price
-        strike_skew_plot_files[ticker] = skew_plot.plot_strikes_skew(ldf, expiration_dates[:4], ticker, output_folder, config.force_rewrite, True)
-        strikes_to_cover = [k for k in sorted(np.array(ldf.strike.unique().tolist())) if abs(k-S) <= (0.2 * S)]
-        exp_skew_plot_files[ticker] = skew_plot.plot_expiration_skew(ldf, strikes_to_cover, ticker, output_folder, config.force_rewrite, True)
-
+        try:
+            strike_skew_plot_files[ticker] = skew_plot.plot_strikes_skew(ldf, expiration_dates[:4], ticker, output_folder, config.force_rewrite, True)
+        except Exception as e:
+            print('ERROR while plotting strikes skew: {}'.format(e))
+        try:
+            strikes_to_cover = [k for k in sorted(np.array(ldf.strike.unique().tolist())) if abs(k-S) <= (0.2 * S)]
+            exp_skew_plot_files[ticker] = skew_plot.plot_expiration_skew(ldf, strikes_to_cover, ticker, output_folder, config.force_rewrite, True)
+        except Exception as e:
+            print('ERROR while plotting expiration skew: {}'.format(e))
+            
     report_path = generate_oi_report(movements, output_folder, oi_plots_files, strike_skew_plot_files, exp_skew_plot_files, tickers_under_analysis)
+    copy_candlestick_datafiles(output_folder)
     generate_link_to_latest(report_path)

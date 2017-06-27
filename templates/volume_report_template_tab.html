@@ -1,21 +1,21 @@
 <div class="alert alert-info">
     <h4><strong>{{ ticker }}</strong> currently trading at <strong>{{ volume_data[ticker]['last_price'] }}</strong></h4>
-    <img src="https://chart.finance.yahoo.com/z?s={{ other_data[ticker]['yahoo_ticker'] }}&t=3m&q=c">
+    {% include 'candlestick_chart_template.html' %}
 </div>
 <br>
-<div id="accordion" class="panel-group">
+<div id="{{ ticker }}-accordion" class="panel-group">
 
 {% if volume_data[ticker]['hv_option_list'] %}
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#volume-section-content-{{ ticker }}-1">
+                <a data-toggle="collapse" data-parent="#{{ ticker }}-accordion" href="#volume-section-content-{{ ticker }}-1">
                     Options with highest volume
                     <span class="pull-right"><i class="fa fa-chevron-down" aria-hidden="true"></i></span>
                 </a>
             </h4>
         </div>
-        <div id="volume-section-content-{{ ticker }}-1" class="panel-collapse collapse in" data-parent="#accordion" data-toggle="false">
+        <div id="volume-section-content-{{ ticker }}-1" class="panel-collapse collapse in" data-parent="#{{ ticker }}-accordion" data-toggle="false">
             <div class="panel-body">
                 <table data-toggle="table" data-sort-name="volume_field" data-sort-order="desc">
                     <thead>
@@ -52,14 +52,14 @@
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#volume-section-content-{{ ticker }}-2">
+                <a data-toggle="collapse" data-parent="#{{ ticker }}-accordion" href="#volume-section-content-{{ ticker }}-2">
                     Options with largest positive change in open interest
                     <span class="pull-right"><i class="fa fa-chevron-down" aria-hidden="true"></i></span>
 
                 </a>
             </h4>
         </div>
-        <div id="volume-section-content-{{ ticker }}-2" class="panel-collapse collapse" data-parent="#accordion" data-toggle="false">
+        <div id="volume-section-content-{{ ticker }}-2" class="panel-collapse collapse" data-parent="#{{ ticker }}-accordion" data-toggle="false">
             <div class="panel-body">
                 <table data-toggle="table" data-sort-name="oievpc_field" data-sort-order="desc">
                     <thead>
@@ -98,13 +98,13 @@
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#volume-section-content-{{ ticker }}-3">
+                <a data-toggle="collapse" data-parent="#{{ ticker }}-accordion" href="#volume-section-content-{{ ticker }}-3">
                     Options with largest % positive change in open interest
                     <span class="pull-right"><i class="fa fa-chevron-down" aria-hidden="true"></i></span>
                 </a>
             </h4>
         </div>
-        <div id="volume-section-content-{{ ticker }}-3" class="panel-collapse collapse" data-parent="#accordion" data-toggle="false">
+        <div id="volume-section-content-{{ ticker }}-3" class="panel-collapse collapse" data-parent="#{{ ticker }}-accordion" data-toggle="false">
             <div class="panel-body">
                 <table data-toggle="table" data-sort-name="oievpc_field" data-sort-order="desc">
                     <thead>
@@ -143,13 +143,13 @@
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#volume-section-content-{{ ticker }}-4">
+                <a data-toggle="collapse" data-parent="#{{ ticker }}-accordion" href="#volume-section-content-{{ ticker }}-4">
                     Call options with higher open interest for each expiration
                     <span class="pull-right"><i class="fa fa-chevron-down" aria-hidden="true"></i></span>
                 </a>
             </h4>
         </div>
-        <div id="volume-section-content-{{ ticker }}-4" class="panel-collapse collapse" data-parent="#accordion" data-toggle="false">
+        <div id="volume-section-content-{{ ticker }}-4" class="panel-collapse collapse" data-parent="#{{ ticker }}-accordion" data-toggle="false">
             <div class="panel-body">
                 <table data-toggle="table" data-sort-name="oi_field" data-sort-order="desc">
                     <thead>
@@ -186,7 +186,7 @@
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#volume-section-content-{{ ticker }}-5">
+                <a data-toggle="collapse" data-parent="#{{ ticker }}-accordion" href="#volume-section-content-{{ ticker }}-5">
                     Put options with higher open interest for each expiration
                     <span class="pull-right"><i class="fa fa-chevron-down" aria-hidden="true"></i></span>
                 </a>

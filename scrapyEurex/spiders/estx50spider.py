@@ -4,7 +4,7 @@ from scrapyEurex.items import OptionItem
 from datetime import date, datetime
 
 
-class Estx50spiderSpider(scrapy.Spider):
+class Estx50Spider(scrapy.Spider):
     name = "estx50spider"
     allowed_domains = ["eurexchange.com"]
     underlying_id = 19068

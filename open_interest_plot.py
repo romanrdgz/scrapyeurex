@@ -7,9 +7,15 @@ from datetime import datetime
 import os
 from os import path
 import matplotlib.pyplot as plt
+import matplotlib.cbook as cbook
+import matplotlib.image as image
+
 import seaborn as sns;
 sns.set(style="white", color_codes=True)
 pd.options.mode.chained_assignment = None
+
+
+watermark_logo = os.path.join(os.getcwd(), 'templates', 'img', 'smartcondor_logo.png')
 
 
 def plot_open_interest(df: pd.DataFrame, t: str, ticker: str, output_folder: str, rewrite_img: bool, save_img: bool):
@@ -57,12 +63,15 @@ def plot_open_interest(df: pd.DataFrame, t: str, ticker: str, output_folder: str
         call_oi = [0] * len(strikes)
         put_oi  = [0] * len(strikes)
         for i, s in enumerate(strikes):
-            oi = call[call.strike == s]
-            if not oi.empty:
-                call_oi[i] = int(oi.open_interest)
-            oi = put[put.strike == s]
-            if not oi.empty:
-                put_oi[i] = int(oi.open_interest)
+            try:
+                oi = call[call.strike == s]
+                if not oi.empty:
+                    call_oi[i] = int(oi.open_interest)
+                oi = put[put.strike == s]
+                if not oi.empty:
+                    put_oi[i] = int(oi.open_interest)
+            except TypeError as e:
+                print('ERROR trying to convert open interest {} to int type: {}'.format(oi.open_interest, e))
         
         # Calculate the vertical size of the plot in order to contain all bars without overlapping nor being too thin
         num_bars = max(len(call_oi), len(put_oi))
@@ -75,6 +84,12 @@ def plot_open_interest(df: pd.DataFrame, t: str, ticker: str, output_folder: str
         df2 = pd.DataFrame({'strike': [s for s in strikes], 'call': call_oi, 'put': put_oi})
         df2 = df2.set_index('strike')
         df2[['call', 'put']].plot(kind='barh', color=['blue', 'red'], ax=ax)
+        
+        # Add watermark logo
+        logo_datafile = cbook.get_sample_data(watermark_logo, asfileobj=False)
+        logo = image.imread(logo_datafile)
+        #logo[:, :, -1] = 0.5  # set the alpha channel
+        fig.figimage(logo, xo=200, yo=200, alpha=0.5, origin='upper', zorder=3)
 
         ax.set_xlabel('Open interest')
         ax.set_ylabel('Strikes')
@@ -116,13 +131,16 @@ def plot_open_interest_evolution(df: pd.DataFrame, k: float, t: str, ticker: str
     # Filter out data
     df = df[(df.expiration_date == tt) & (df.strike == k)]
     
+    # Sort by session date
+    df = df.sort_values('session_date', ascending=True)
+    
     # Get data to plot (get session dates for each group independently to avoid problems when data is missing for one group)
     session_dates_call = pd.to_datetime(df.session_date[df.right == 'C'], format="%d/%m/%Y")
     session_dates_put = pd.to_datetime(df.session_date[df.right == 'P'], format="%d/%m/%Y")
     call_oi = df.open_interest[df.right == 'C']
     put_oi = df.open_interest[df.right == 'P']
     
-    f, ax = plt.subplots()
+    fig, ax = plt.subplots()
     ax.plot(session_dates_call, call_oi, 'b', label='Calls')
     ax.plot(session_dates_put,  put_oi,  'r', label='Puts')
     ax.set_xlabel('Session date')
@@ -131,8 +149,14 @@ def plot_open_interest_evolution(df: pd.DataFrame, k: float, t: str, ticker: str
     ax.grid(True)
     ax.legend()
     
+    # Add watermark logo
+    logo_datafile = cbook.get_sample_data(watermark_logo, asfileobj=False)
+    logo = image.imread(logo_datafile)
+    #logo[:, :, -1] = 0.5  # set the alpha channel
+    fig.figimage(logo, xo=250, yo=400, alpha=0.5, origin='upper', zorder=3)
+    
     if save_img:
-        plt.savefig(img_path, format='svg', dpi=300)
+        plt.savefig(img_path, format='svg', dpi=100)
     else:
         plt.show()
     plt.close('all')
