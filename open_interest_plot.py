@@ -127,6 +127,7 @@ def plot_open_interest_evolution(df: pd.DataFrame, k: float, t: str, ticker: str
     
     # Traspose date format
     tt = datetime.strptime(t, '%Y/%m/%d').strftime('%d/%m/%Y')
+    df['session_date'] = pd.to_datetime(df.session_date, format="%d/%m/%Y")
     
     # Filter out data
     df = df[(df.expiration_date == tt) & (df.strike == k)]
@@ -134,15 +135,10 @@ def plot_open_interest_evolution(df: pd.DataFrame, k: float, t: str, ticker: str
     # Sort by session date
     df = df.sort_values('session_date', ascending=True)
     
-    # Get data to plot (get session dates for each group independently to avoid problems when data is missing for one group)
-    session_dates_call = pd.to_datetime(df.session_date[df.right == 'C'], format="%d/%m/%Y")
-    session_dates_put = pd.to_datetime(df.session_date[df.right == 'P'], format="%d/%m/%Y")
-    call_oi = df.open_interest[df.right == 'C']
-    put_oi = df.open_interest[df.right == 'P']
-    
+    # Plot data
     fig, ax = plt.subplots()
-    ax.plot(session_dates_call, call_oi, 'b', label='Calls')
-    ax.plot(session_dates_put,  put_oi,  'r', label='Puts')
+    ax.plot(df.session_date[df.right == 'C'], df.open_interest[df.right == 'C'], 'b', label='Calls')
+    ax.plot(df.session_date[df.right == 'P'], df.open_interest[df.right == 'P'], 'r', label='Puts')
     ax.set_xlabel('Session date')
     ax.set_ylabel('Open interest')
     ax.set_title('Evolution of open interest for {} strike {} expiring on {}'.format(ticker, k, t))
